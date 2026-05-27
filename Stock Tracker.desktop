@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Stock Tracker
+Comment=Launch the Stock Tracker desktop app
+Exec=/home/vinay-dsouza/bin/stock-tracker-launch.sh
+Icon=/home/vinay-dsouza/.local/share/icons/stock-tracker-icon.svg
+Terminal=false
+Categories=Utility;Finance;
