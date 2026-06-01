@@ -42,6 +42,13 @@ Or build the app with:
 - `gradlew` / `gradlew.bat` - Gradle wrapper scripts
 - `run-stock-tracker.sh` - helper launcher script
 
+## Spec-Driven Development Docs
+
+- `spec.md` - business layer with user stories, TDD proof, priorities, and standards
+- `plan.md` - technical governance, TDD workflow, test layers, compliance, and merge gate strategy
+- `tasks.md` - phased work breakdown with numbered checkbox tasks and test-first tasks
+- `governance.md` - code governance, color-coded merge policy, and enforcement rules
+
 ## License
 
 This project does not currently include an explicit license file.
