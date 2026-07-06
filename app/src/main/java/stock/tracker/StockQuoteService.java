@@ -25,6 +25,7 @@ import org.json.JSONObject;
 public class StockQuoteService {
     private static final String YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/";
     private static final String YAHOO_SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search?q=";
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")
             .withLocale(Locale.US)
             .withZone(ZoneId.systemDefault());
@@ -105,8 +106,8 @@ public class StockQuoteService {
         String url = YAHOO_CHART_URL + URLEncoder.encode(symbol, StandardCharsets.UTF_8) + "?interval=2m&range=1d";
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("User-Agent", "Java Stock Tracker/1.0")
-                .header("Accept", "application/json")
+                .header("User-Agent", USER_AGENT)
+                .header("Accept", "*/*")
                 .GET()
                 .build();
 
@@ -121,8 +122,8 @@ public class StockQuoteService {
         String url = YAHOO_SEARCH_URL + URLEncoder.encode(symbol, StandardCharsets.UTF_8);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("User-Agent", "Java Stock Tracker/1.0")
-                .header("Accept", "application/json")
+                .header("User-Agent", USER_AGENT)
+                .header("Accept", "*/*")
                 .GET()
                 .build();
 
@@ -171,8 +172,8 @@ public class StockQuoteService {
         String url = YAHOO_SEARCH_URL + URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("User-Agent", "Java Stock Tracker/1.0")
-                .header("Accept", "application/json")
+                .header("User-Agent", USER_AGENT)
+                .header("Accept", "*/*")
                 .GET()
                 .build();
 

@@ -76,10 +76,12 @@ public class App extends JFrame {
     private final DefaultComboBoxModel<String> groupComboModel;
     private final DefaultListModel<String> groupListModel;
     private final JTextArea logArea;
+    private final JTextArea newsArea;
     private final JLabel marketStatusLabel;
     private final Map<String, String> symbolGroupMap;
     private final WatchlistStore watchlistStore;
     private final StockQuoteService quoteService;
+    private final StockNewsService newsService;
     private final ScheduledExecutorService scheduler;
     private TrayIcon trayIcon;
     private boolean systemTraySupported = false;
@@ -97,6 +99,7 @@ public class App extends JFrame {
         symbolGroupMap = new LinkedHashMap<>();
         watchlistStore = new WatchlistStore();
         quoteService = new StockQuoteService();
+        newsService = new StockNewsService();
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
         tableModel = new DefaultTableModel(new String[]{"Symbol", "Group", "Price", "Change", "% Change", "Name", "Updated"}, 0) {
@@ -108,6 +111,7 @@ public class App extends JFrame {
         groupComboModel = new DefaultComboBoxModel<>();
         groupListModel = new DefaultListModel<>();
         logArea = new JTextArea(6, 1);
+        newsArea = new JTextArea(6, 1);
         marketStatusLabel = new JLabel("Loading market feed...");
 
         loadWatchlist();
@@ -302,6 +306,32 @@ public class App extends JFrame {
         quoteTable.getColumnModel().getColumn(4).setCellRenderer(new ChangeCellRenderer());
         quoteTable.getColumnModel().getColumn(6).setCellRenderer(rightRenderer);
 
+        quoteTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showTickerContextMenu(e, quoteTable);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showTickerContextMenu(e, quoteTable);
+                }
+            }
+        });
+
+        quoteTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && quoteTable.getSelectedRow() >= 0) {
+                int modelRow = quoteTable.convertRowIndexToModel(quoteTable.getSelectedRow());
+                String symbol = tableModel.getValueAt(modelRow, 0).toString();
+                if (!symbol.contains("No quotes available")) {
+                    fetchAndDisplayNews(symbol);
+                }
+            }
+        });
+
         JScrollPane quoteScroll = new JScrollPane(quoteTable);
         quoteScroll.setBorder(BorderFactory.createLineBorder(new Color(220, 225, 235), 1, true));
         quoteScroll.getViewport().setBackground(new Color(255, 255, 255));
@@ -363,7 +393,32 @@ public class App extends JFrame {
         centerSplit.setResizeWeight(0.78);
         centerSplit.setBorder(null);
         centerSplit.setOpaque(false);
-        mainPanel.add(centerSplit, BorderLayout.CENTER);
+
+        newsArea.setEditable(false);
+        newsArea.setLineWrap(true);
+        newsArea.setWrapStyleWord(true);
+        newsArea.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        newsArea.setForeground(new Color(35, 40, 44));
+        newsArea.setBackground(new Color(255, 255, 255));
+        newsArea.setText("Select a ticker to view latest news.");
+
+        JScrollPane newsScroll = new JScrollPane(newsArea);
+        newsScroll.setBorder(BorderFactory.createLineBorder(new Color(220, 225, 235), 1, true));
+        newsScroll.getViewport().setBackground(new Color(255, 255, 255));
+
+        JPanel newsPanel = new RoundedPanel(26, new Color(255, 255, 255));
+        newsPanel.setLayout(new BorderLayout(10, 10));
+        newsPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
+        newsPanel.setPreferredSize(new Dimension(0, 120));
+        newsPanel.add(new JLabel("Latest News"), BorderLayout.NORTH);
+        newsPanel.add(newsScroll, BorderLayout.CENTER);
+
+        JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, centerSplit, newsPanel);
+        mainSplit.setResizeWeight(0.7);
+        mainSplit.setBorder(null);
+        mainSplit.setOpaque(false);
+
+        mainPanel.add(mainSplit, BorderLayout.CENTER);
 
         // Alerts & Activity footer removed per user request; logArea remains for internal logging.
 
@@ -438,6 +493,21 @@ public class App extends JFrame {
         popup.add(deleteItem);
 
         popup.show(groupList, event.getX(), event.getY());
+    }
+
+    private void showTickerContextMenu(MouseEvent event, JTable quoteTable) {
+        int row = quoteTable.rowAtPoint(event.getPoint());
+        if (row < 0) {
+            return;
+        }
+        quoteTable.setRowSelectionInterval(row, row);
+
+        JPopupMenu popup = new JPopupMenu();
+        JMenuItem deleteItem = new JMenuItem("Delete");
+        deleteItem.addActionListener(e -> removeSelectedTicker(quoteTable));
+        popup.add(deleteItem);
+
+        popup.show(quoteTable, event.getX(), event.getY());
     }
 
     private void renameGroup(String groupName) {
@@ -521,6 +591,37 @@ public class App extends JFrame {
         tableModel.removeRow(modelRow);
         saveWatchlist();
         log("Removed ticker: " + symbol);
+    }
+
+    private void fetchAndDisplayNews(String symbol) {
+        newsArea.setText("Loading news for " + symbol + "...");
+        new Thread(() -> {
+            try {
+                List<StockNewsService.NewsItem> newsList = newsService.fetchNews(symbol);
+                SwingUtilities.invokeLater(() -> displayNews(symbol, newsList));
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> newsArea.setText("Unable to fetch news for " + symbol + ". Error: " + e.getMessage()));
+            }
+        }).start();
+    }
+
+    private void displayNews(String symbol, List<StockNewsService.NewsItem> newsList) {
+        if (newsList.isEmpty()) {
+            newsArea.setText("No news available for " + symbol + " at this time.");
+            return;
+        }
+
+        StringBuilder newsText = new StringBuilder();
+        newsText.append("Latest News for ").append(symbol).append(":\n\n");
+        for (StockNewsService.NewsItem item : newsList) {
+            newsText.append("• ").append(item.getTitle()).append("\n");
+            if (!item.getSource().isBlank()) {
+                newsText.append("  Source: ").append(item.getSource()).append("\n");
+            }
+            newsText.append("\n");
+        }
+        newsArea.setText(newsText.toString());
+        newsArea.setCaretPosition(0);
     }
 
     private void refreshQuotesAsync() {
