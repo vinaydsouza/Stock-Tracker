@@ -102,7 +102,7 @@ public class App extends JFrame {
         newsService = new StockNewsService();
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
-        tableModel = new DefaultTableModel(new String[]{"Symbol", "Group", "Price", "Change", "% Change", "Name", "Updated"}, 0) {
+        tableModel = new DefaultTableModel(new String[]{"Symbol", "Price", "Change", "% Change", "Name", "Updated"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -301,10 +301,10 @@ public class App extends JFrame {
 
         DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
         rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
-        quoteTable.getColumnModel().getColumn(2).setCellRenderer(rightRenderer);
+        quoteTable.getColumnModel().getColumn(1).setCellRenderer(rightRenderer);
+        quoteTable.getColumnModel().getColumn(2).setCellRenderer(new ChangeCellRenderer());
         quoteTable.getColumnModel().getColumn(3).setCellRenderer(new ChangeCellRenderer());
-        quoteTable.getColumnModel().getColumn(4).setCellRenderer(new ChangeCellRenderer());
-        quoteTable.getColumnModel().getColumn(6).setCellRenderer(rightRenderer);
+        quoteTable.getColumnModel().getColumn(5).setCellRenderer(rightRenderer);
 
         quoteTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -793,7 +793,6 @@ public class App extends JFrame {
             String changePercentText = Double.isFinite(item.changePercent()) ? String.format("%.2f%%", item.changePercent()) : "N/A";
             tableModel.addRow(new Object[]{
                 item.symbol(),
-                item.group(),
                 priceText,
                 changeText,
                 changePercentText,
@@ -808,7 +807,7 @@ public class App extends JFrame {
             }
         }
         if (rowsAdded == 0) {
-            tableModel.addRow(new Object[]{"No quotes available yet. Add tickers to see live data.", "", "", "", "", "", ""});
+            tableModel.addRow(new Object[]{"No quotes available yet. Add tickers to see live data.", "", "", "", "", ""});
         }
 
         boolean marketClosed = isWallStreetClosed();
