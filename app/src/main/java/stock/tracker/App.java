@@ -206,7 +206,6 @@ public class App extends JFrame {
         symbolEditor.setBackground(new Color(16, 22, 35));
         symbolEditor.setForeground(new Color(255, 255, 255));
         symbolEditor.setCaretColor(new Color(255, 255, 255));
-        setupPlaceholder(symbolEditor, "Search Ticker..");
         if (symbolEditor.getDocument() instanceof AbstractDocument doc) {
             doc.setDocumentFilter(new DocumentFilter() {
                 @Override
@@ -707,9 +706,7 @@ public class App extends JFrame {
 
     private String getTickerInput(JComboBox<String> comboBox) {
         Object item = comboBox.getEditor().getItem();
-        String text = item == null ? "" : item.toString();
-        // Filter out placeholder text
-        return text.equals("Search Ticker..") ? "" : text;
+        return item == null ? "" : item.toString();
     }
 
     private void fetchTickerSuggestions(String query, DefaultComboBoxModel<String> model, JComboBox<String> combo) {
