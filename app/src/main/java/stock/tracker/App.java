@@ -511,15 +511,19 @@ public class App extends JFrame {
             }
 
             private void updatePlaceholder() {
-                String text = textComponent.getText();
-                if (text.isEmpty()) {
-                    textComponent.setText(placeholder);
-                    textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
-                    textComponent.setForeground(new Color(100, 110, 130));
-                } else if (!text.equals(placeholder)) {
-                    textComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
-                    textComponent.setForeground(new Color(255, 255, 255));
-                }
+                SwingUtilities.invokeLater(() -> {
+                    String text = textComponent.getText();
+                    if (text.isEmpty()) {
+                        textComponent.getDocument().removeDocumentListener(this);
+                        textComponent.setText(placeholder);
+                        textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
+                        textComponent.setForeground(new Color(100, 110, 130));
+                        textComponent.getDocument().addDocumentListener(this);
+                    } else if (!text.equals(placeholder)) {
+                        textComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
+                        textComponent.setForeground(new Color(255, 255, 255));
+                    }
+                });
             }
         });
     }
