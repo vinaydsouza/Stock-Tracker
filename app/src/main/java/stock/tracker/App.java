@@ -466,79 +466,35 @@ public class App extends JFrame {
     }
 
     private void setupPlaceholder(JTextComponent textComponent, String placeholder) {
-        // Flag to track if we're currently showing placeholder text
-        final boolean[] isShowingPlaceholder = {false};
-        
-        // Create document listener first so it can be referenced in focus adapter
-        final javax.swing.event.DocumentListener[] docListener = new javax.swing.event.DocumentListener[1];
-        
-        docListener[0] = new javax.swing.event.DocumentListener() {
-            @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                updatePlaceholder();
-            }
-
-            @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                updatePlaceholder();
-            }
-
-            @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                updatePlaceholder();
-            }
-
-            private void updatePlaceholder() {
-                SwingUtilities.invokeLater(() -> {
-                    String text = textComponent.getText();
-                    // If user types something while placeholder is showing, clear it
-                    if (isShowingPlaceholder[0] && !text.isEmpty() && !text.equals(placeholder)) {
-                        isShowingPlaceholder[0] = false;
-                        textComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
-                        textComponent.setForeground(new Color(255, 255, 255));
-                    }
-                });
-            }
-        };
+        // Show placeholder initially
+        if (textComponent.getText().isEmpty()) {
+            textComponent.setText(placeholder);
+            textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
+            textComponent.setForeground(new Color(100, 110, 130));
+        }
         
         textComponent.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
-                // When user focuses, remove placeholder if present
-                if (isShowingPlaceholder[0] && textComponent.getText().equals(placeholder)) {
-                    textComponent.getDocument().removeDocumentListener(docListener[0]);
-                    textComponent.setText("");
-                    isShowingPlaceholder[0] = false;
-                    textComponent.setForeground(new Color(255, 255, 255));
+                // When user clicks the field, if placeholder is showing, select all so typing replaces it
+                if (textComponent.getText().equals(placeholder)) {
+                    textComponent.selectAll();
                     textComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
-                    textComponent.getDocument().addDocumentListener(docListener[0]);
+                    textComponent.setForeground(new Color(255, 255, 255));
                 }
             }
 
             @Override
             public void focusLost(FocusEvent e) {
                 // When user leaves field, restore placeholder if empty
-                if (textComponent.getText().isEmpty()) {
-                    textComponent.getDocument().removeDocumentListener(docListener[0]);
+                String text = textComponent.getText().trim();
+                if (text.isEmpty()) {
                     textComponent.setText(placeholder);
-                    isShowingPlaceholder[0] = true;
                     textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
                     textComponent.setForeground(new Color(100, 110, 130));
-                    textComponent.getDocument().addDocumentListener(docListener[0]);
                 }
             }
         });
-
-        // Show placeholder initially
-        if (textComponent.getText().isEmpty()) {
-            textComponent.setText(placeholder);
-            textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
-            textComponent.setForeground(new Color(100, 110, 130));
-            isShowingPlaceholder[0] = true;
-        }
-
-        // Add the document listener
-        textComponent.getDocument().addDocumentListener(docListener[0]);
     }
 
     private void addGroup(String groupName) {
