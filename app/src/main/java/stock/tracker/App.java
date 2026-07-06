@@ -187,7 +187,7 @@ public class App extends JFrame {
         symbolField.setMinimumSize(new Dimension(110, 40));
         symbolField.setPrototypeDisplayValue("WWWWW");
         symbolField.setMaximumRowCount(5);
-        symbolField.setBackground(new Color(40, 50, 70));
+        symbolField.setBackground(new Color(16, 22, 35));
         symbolField.setForeground(new Color(255, 255, 255));
         c.gridx = 1;
         c.gridy = 0;
@@ -268,13 +268,15 @@ public class App extends JFrame {
         groupCombo.setEditable(true);
         groupCombo.setFont(new Font("SansSerif", Font.PLAIN, 14));
         groupCombo.setPreferredSize(new Dimension(140, 40));
-        groupCombo.setBackground(new Color(40, 50, 70));
+        groupCombo.setBackground(new Color(16, 22, 35));
         groupCombo.setForeground(new Color(255, 255, 255));
+        ((JLabel)groupCombo.getRenderer()).setOpaque(true);
         c.gridx = 3;
         c.gridy = 0;
         actionCard.add(groupCombo, c);
 
         JButton addSymbolButton = createPrimaryButton("+ Add Ticker");
+        addSymbolButton.setPreferredSize(new Dimension(120, 40));
         c.gridx = 4;
         c.gridy = 0;
         c.weightx = 0.0;
@@ -303,11 +305,19 @@ public class App extends JFrame {
         header.setResizingAllowed(true);
 
         DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
-        rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
-        quoteTable.getColumnModel().getColumn(1).setCellRenderer(rightRenderer);
-        quoteTable.getColumnModel().getColumn(2).setCellRenderer(new ChangeCellRenderer());
-        quoteTable.getColumnModel().getColumn(3).setCellRenderer(new ChangeCellRenderer());
-        quoteTable.getColumnModel().getColumn(5).setCellRenderer(rightRenderer);
+        rightRenderer.setHorizontalAlignment(JLabel.CENTER);
+        
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        centerRenderer.setBackground(new Color(25, 32, 50));
+        centerRenderer.setForeground(new Color(220, 225, 235));
+        
+        quoteTable.getColumnModel().getColumn(0).setCellRenderer(new TickerIconRenderer());
+        quoteTable.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        quoteTable.getColumnModel().getColumn(2).setCellRenderer(new DarkChangeRenderer());
+        quoteTable.getColumnModel().getColumn(3).setCellRenderer(new DarkChangeRenderer());
+        quoteTable.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+        quoteTable.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
 
         quoteTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -960,12 +970,14 @@ public class App extends JFrame {
     }
 
     private static JButton createPrimaryButton(String text) {
-        JButton button = new JButton(text);
+        RoundedButton button = new RoundedButton(text);
         button.setFont(new Font("SansSerif", Font.BOLD, 14));
-        button.setBackground(new Color(10, 132, 255));
+        button.setBackground(new Color(65, 150, 255));
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+        button.setContentAreaFilled(true);
+        button.setOpaque(false);
         return button;
     }
 
@@ -977,6 +989,102 @@ public class App extends JFrame {
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
         return button;
+    }
+
+    private static class RoundedButton extends JButton {
+        private static final int ARC_RADIUS = 12;
+        
+        public RoundedButton(String text) {
+            super(text);
+        }
+        
+        @Override
+        protected void paintComponent(java.awt.Graphics g) {
+            java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), ARC_RADIUS, ARC_RADIUS);
+            g2.dispose();
+            super.paintComponent(g);
+        }
+        
+        @Override
+        protected void paintBorder(java.awt.Graphics g) {
+            // No border needed
+        }
+    }
+
+    private static class TickerIconRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            
+            if (isSelected) {
+                c.setBackground(table.getSelectionBackground());
+                c.setForeground(table.getSelectionForeground());
+            } else {
+                c.setBackground(new Color(25, 32, 50));
+                c.setForeground(new Color(220, 225, 235));
+            }
+            
+            if (value != null) {
+                String symbol = value.toString().toUpperCase();
+                String icon = getIconForTicker(symbol);
+                setText(icon + " " + symbol);
+            }
+            setHorizontalAlignment(JLabel.LEFT);
+            setFont(new Font("SansSerif", Font.PLAIN, 14));
+            return this;
+        }
+        
+        private String getIconForTicker(String symbol) {
+            return switch (symbol) {
+                case "AAPL", "MSFT", "GOOGL", "META" -> "💻";
+                case "TSLA", "RIVN", "LCID", "NIO" -> "🚗";
+                case "NVDA", "AMD", "AVGO" -> "🔧";
+                case "JPM", "BAC", "GS" -> "🏦";
+                case "PFE", "JNJ", "AZN" -> "💊";
+                case "XOM", "CVX", "COP" -> "⚡";
+                case "AMZN", "WMT", "HD" -> "🛒";
+                case "NFLX", "DIS", "PARA" -> "📺";
+                default -> "📈";
+            };
+        }
+    }
+
+    private static class DarkChangeRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setHorizontalAlignment(JLabel.CENTER);
+            
+            if (isSelected) {
+                c.setForeground(table.getSelectionForeground());
+                c.setBackground(table.getSelectionBackground());
+            } else {
+                c.setBackground(new Color(16, 22, 35));
+                if (value != null) {
+                    String text = value.toString().replace("%", "").trim();
+                    try {
+                        double amount = Double.parseDouble(text.replace("%", ""));
+                        if (amount > 0) {
+                            c.setForeground(new Color(76, 175, 80));
+                        } else if (amount < 0) {
+                            c.setForeground(new Color(255, 87, 51));
+                        } else {
+                            c.setForeground(new Color(150, 160, 175));
+                        }
+                    } catch (NumberFormatException e) {
+                        c.setForeground(new Color(150, 160, 175));
+                    }
+                } else {
+                    c.setForeground(new Color(150, 160, 175));
+                }
+            }
+            return c;
+        }
     }
 
     private static class RoundedPanel extends JPanel {
