@@ -127,7 +127,7 @@ public class App extends JFrame {
         setLocationRelativeTo(null);
 
         Container content = getContentPane();
-        content.setBackground(new Color(242, 244, 248));
+        content.setBackground(new Color(16, 22, 35));
         content.setLayout(new BorderLayout(14, 14));
 
         JPanel headerPanel = new JPanel(new BorderLayout(8, 8));
@@ -136,11 +136,11 @@ public class App extends JFrame {
 
         JLabel titleLabel = new JLabel("Stocks");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 34));
-        titleLabel.setForeground(new Color(30, 33, 38));
+        titleLabel.setForeground(new Color(255, 255, 255));
 
         JLabel subtitleLabel = new JLabel("Live tickers, groups, and market direction.");
         subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        subtitleLabel.setForeground(new Color(108, 115, 127));
+        subtitleLabel.setForeground(new Color(180, 185, 200));
 
         JPanel titleBlock = new JPanel(new BorderLayout(6, 6));
         titleBlock.setOpaque(false);
@@ -150,11 +150,10 @@ public class App extends JFrame {
         headerPanel.add(titleBlock, BorderLayout.WEST);
 
         marketStatusLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        marketStatusLabel.setOpaque(true);
-        marketStatusLabel.setBackground(new Color(229, 241, 255));
-        marketStatusLabel.setForeground(new Color(8, 102, 217));
+        marketStatusLabel.setOpaque(false);
+        marketStatusLabel.setForeground(new Color(76, 175, 80));
         marketStatusLabel.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
-        marketStatusLabel.setHorizontalAlignment(JLabel.CENTER);
+        marketStatusLabel.setHorizontalAlignment(JLabel.RIGHT);
         headerPanel.add(marketStatusLabel, BorderLayout.EAST);
 
         content.add(headerPanel, BorderLayout.NORTH);
@@ -163,7 +162,7 @@ public class App extends JFrame {
         mainPanel.setOpaque(false);
         mainPanel.setBorder(new EmptyBorder(0, 16, 16, 16));
 
-        JPanel actionCard = new RoundedPanel(26, new Color(255, 255, 255));
+        JPanel actionCard = new RoundedPanel(26, new Color(25, 32, 50));
         actionCard.setLayout(new GridBagLayout());
         actionCard.setBorder(new EmptyBorder(18, 18, 18, 18));
         actionCard.setPreferredSize(new Dimension(0, 130));
@@ -175,7 +174,7 @@ public class App extends JFrame {
 
         JLabel tickerLabel = new JLabel("Ticker");
         tickerLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        tickerLabel.setForeground(new Color(98, 103, 112));
+        tickerLabel.setForeground(new Color(150, 160, 175));
         c.gridx = 0;
         c.gridy = 0;
         actionCard.add(tickerLabel, c);
@@ -188,6 +187,8 @@ public class App extends JFrame {
         symbolField.setMinimumSize(new Dimension(110, 40));
         symbolField.setPrototypeDisplayValue("WWWWW");
         symbolField.setMaximumRowCount(5);
+        symbolField.setBackground(new Color(40, 50, 70));
+        symbolField.setForeground(new Color(255, 255, 255));
         c.gridx = 1;
         c.gridy = 0;
         c.weightx = 0.0;
@@ -257,7 +258,7 @@ public class App extends JFrame {
 
         JLabel groupLabel = new JLabel("Group");
         groupLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        groupLabel.setForeground(new Color(98, 103, 112));
+        groupLabel.setForeground(new Color(150, 160, 175));
         c.gridx = 2;
         c.gridy = 0;
         c.weightx = 0.0;
@@ -267,11 +268,13 @@ public class App extends JFrame {
         groupCombo.setEditable(true);
         groupCombo.setFont(new Font("SansSerif", Font.PLAIN, 14));
         groupCombo.setPreferredSize(new Dimension(140, 40));
+        groupCombo.setBackground(new Color(40, 50, 70));
+        groupCombo.setForeground(new Color(255, 255, 255));
         c.gridx = 3;
         c.gridy = 0;
         actionCard.add(groupCombo, c);
 
-        JButton addSymbolButton = createPrimaryButton("Add Ticker");
+        JButton addSymbolButton = createPrimaryButton("+ Add Ticker");
         c.gridx = 4;
         c.gridy = 0;
         c.weightx = 0.0;
@@ -284,8 +287,8 @@ public class App extends JFrame {
         quoteTable.setIntercellSpacing(new Dimension(0, 0));
         quoteTable.setRowHeight(40);
         quoteTable.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        quoteTable.setForeground(new Color(35, 40, 44));
-        quoteTable.setBackground(new Color(255, 255, 255));
+        quoteTable.setForeground(new Color(220, 225, 235));
+        quoteTable.setBackground(new Color(25, 32, 50));
         quoteTable.setFillsViewportHeight(true);
         quoteTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         quoteTable.setRowSelectionAllowed(true);
@@ -293,8 +296,8 @@ public class App extends JFrame {
         quoteTable.setSelectionForeground(Color.WHITE);
 
         JTableHeader header = quoteTable.getTableHeader();
-        header.setBackground(new Color(248, 248, 250));
-        header.setForeground(new Color(79, 84, 92));
+        header.setBackground(new Color(35, 45, 65));
+        header.setForeground(new Color(150, 160, 175));
         header.setFont(new Font("SansSerif", Font.BOLD, 12));
         header.setReorderingAllowed(false);
         header.setResizingAllowed(true);
@@ -333,28 +336,34 @@ public class App extends JFrame {
         });
 
         JScrollPane quoteScroll = new JScrollPane(quoteTable);
-        quoteScroll.setBorder(BorderFactory.createLineBorder(new Color(220, 225, 235), 1, true));
-        quoteScroll.getViewport().setBackground(new Color(255, 255, 255));
+        quoteScroll.setBorder(BorderFactory.createLineBorder(new Color(40, 50, 70), 1, true));
+        quoteScroll.getViewport().setBackground(new Color(25, 32, 50));
 
-        JPanel quotePanel = new RoundedPanel(26, new Color(255, 255, 255));
+        JPanel quotePanel = new RoundedPanel(26, new Color(25, 32, 50));
         quotePanel.setLayout(new BorderLayout(10, 10));
         quotePanel.setBorder(new EmptyBorder(18, 18, 18, 18));
-        quotePanel.add(new JLabel("Ticker Feed"), BorderLayout.NORTH);
+        JLabel feedTitle = new JLabel("Ticker Feed");
+        feedTitle.setForeground(new Color(220, 225, 235));
+        feedTitle.setFont(new Font("SansSerif", Font.BOLD, 14));
+        quotePanel.add(feedTitle, BorderLayout.NORTH);
         quotePanel.add(quoteScroll, BorderLayout.CENTER);
 
-        JPanel sidePanel = new RoundedPanel(26, new Color(255, 255, 255));
+        JPanel sidePanel = new RoundedPanel(26, new Color(25, 32, 50));
         sidePanel.setLayout(new BorderLayout(10, 10));
         sidePanel.setBorder(new EmptyBorder(18, 18, 18, 18));
         sidePanel.setPreferredSize(new Dimension(220, 0));
 
         JLabel groupsTitle = new JLabel("Groups");
-        groupsTitle.setFont(new Font("SansSerif", Font.BOLD, 16));
-        groupsTitle.setForeground(new Color(30, 33, 38));
+        groupsTitle.setForeground(new Color(220, 225, 235));
+        groupsTitle.setFont(new Font("SansSerif", Font.BOLD, 14));
         sidePanel.add(groupsTitle, BorderLayout.NORTH);
 
         groupList = new JList<>(groupListModel);
         groupList.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        groupList.setBackground(new Color(255, 255, 255));
+        groupList.setBackground(new Color(25, 32, 50));
+        groupList.setForeground(new Color(220, 225, 235));
+        groupList.setSelectionBackground(new Color(41, 121, 255));
+        groupList.setSelectionForeground(Color.WHITE);
         groupList.setFixedCellHeight(34);
         groupList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -378,6 +387,7 @@ public class App extends JFrame {
         });
         JScrollPane groupScroll = new JScrollPane(groupList);
         groupScroll.setBorder(BorderFactory.createEmptyBorder());
+        groupScroll.getViewport().setBackground(new Color(25, 32, 50));
         sidePanel.add(groupScroll, BorderLayout.CENTER);
 
         // Apply persisted group selection if available, otherwise select 'All'
@@ -398,19 +408,22 @@ public class App extends JFrame {
         newsArea.setLineWrap(true);
         newsArea.setWrapStyleWord(true);
         newsArea.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        newsArea.setForeground(new Color(35, 40, 44));
-        newsArea.setBackground(new Color(255, 255, 255));
+        newsArea.setForeground(new Color(220, 225, 235));
+        newsArea.setBackground(new Color(25, 32, 50));
         newsArea.setText("Select a ticker to view latest news.");
 
         JScrollPane newsScroll = new JScrollPane(newsArea);
-        newsScroll.setBorder(BorderFactory.createLineBorder(new Color(220, 225, 235), 1, true));
-        newsScroll.getViewport().setBackground(new Color(255, 255, 255));
+        newsScroll.setBorder(BorderFactory.createLineBorder(new Color(40, 50, 70), 1, true));
+        newsScroll.getViewport().setBackground(new Color(25, 32, 50));
 
-        JPanel newsPanel = new RoundedPanel(26, new Color(255, 255, 255));
+        JPanel newsPanel = new RoundedPanel(26, new Color(25, 32, 50));
         newsPanel.setLayout(new BorderLayout(10, 10));
         newsPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
         newsPanel.setPreferredSize(new Dimension(0, 120));
-        newsPanel.add(new JLabel("Latest News"), BorderLayout.NORTH);
+        JLabel newsTitle = new JLabel("Latest News");
+        newsTitle.setForeground(new Color(220, 225, 235));
+        newsTitle.setFont(new Font("SansSerif", Font.BOLD, 14));
+        newsPanel.add(newsTitle, BorderLayout.NORTH);
         newsPanel.add(newsScroll, BorderLayout.CENTER);
 
         JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, centerSplit, newsPanel);
