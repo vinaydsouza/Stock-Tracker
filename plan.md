@@ -26,6 +26,16 @@
 - Use the project toolchain Java 21 and only approved dependencies.
 - Record known limitations and design tradeoffs in the implementation notes.
 
+## Service Architecture
+- **StockQuoteService**: Fetches live stock quotes from Yahoo Finance API with browser User-Agent headers.
+- **StockNewsService**: Fetches latest news articles for ticker symbols from Yahoo Finance API.
+- **WatchlistStore**: Persists user watchlist and groups to disk.
+
+## Implementation Notes
+- User-Agent header set to browser Chrome string to avoid 404 errors from Yahoo Finance API.
+- News service returns up to 5 most recent articles per ticker.
+- Both API services handle errors gracefully and return empty results on failure.
+
 ## Merge Gate Strategy
 - Pull requests must include:
   - Target branch context and purpose.
