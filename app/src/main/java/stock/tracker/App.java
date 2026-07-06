@@ -202,6 +202,10 @@ public class App extends JFrame {
         });
 
         JTextComponent symbolEditor = (JTextComponent) symbolField.getEditor().getEditorComponent();
+        symbolEditor.setBackground(new Color(16, 22, 35));
+        symbolEditor.setForeground(new Color(255, 255, 255));
+        symbolEditor.setCaretColor(new Color(255, 255, 255));
+        setupPlaceholder(symbolEditor, "Search Ticker..");
         if (symbolEditor.getDocument() instanceof AbstractDocument doc) {
             doc.setDocumentFilter(new DocumentFilter() {
                 @Override
@@ -271,6 +275,14 @@ public class App extends JFrame {
         groupCombo.setBackground(new Color(16, 22, 35));
         groupCombo.setForeground(new Color(255, 255, 255));
         ((JLabel)groupCombo.getRenderer()).setOpaque(true);
+        
+        // Setup placeholder for group combobox
+        JTextComponent groupEditor = (JTextComponent) groupCombo.getEditor().getEditorComponent();
+        groupEditor.setBackground(new Color(16, 22, 35));
+        groupEditor.setForeground(new Color(255, 255, 255));
+        groupEditor.setCaretColor(new Color(255, 255, 255));
+        setupPlaceholder(groupEditor, "Select Group");
+        
         c.gridx = 3;
         c.gridy = 0;
         actionCard.add(groupCombo, c);
@@ -452,6 +464,65 @@ public class App extends JFrame {
         setVisible(true);
     }
 
+    private void setupPlaceholder(JTextComponent textComponent, String placeholder) {
+        textComponent.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (textComponent.getText().isEmpty()) {
+                    textComponent.setText(placeholder);
+                    textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
+                    textComponent.setForeground(new Color(100, 110, 130));
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (textComponent.getText().equals(placeholder)) {
+                    textComponent.setText("");
+                    textComponent.setForeground(new Color(255, 255, 255));
+                    textComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
+                }
+            }
+        });
+
+        // Show placeholder initially
+        if (textComponent.getText().isEmpty()) {
+            textComponent.setText(placeholder);
+            textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
+            textComponent.setForeground(new Color(100, 110, 130));
+        }
+
+        // Add document listener to handle placeholder text
+        textComponent.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updatePlaceholder();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updatePlaceholder();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updatePlaceholder();
+            }
+
+            private void updatePlaceholder() {
+                String text = textComponent.getText();
+                if (text.isEmpty()) {
+                    textComponent.setText(placeholder);
+                    textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
+                    textComponent.setForeground(new Color(100, 110, 130));
+                } else if (!text.equals(placeholder)) {
+                    textComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
+                    textComponent.setForeground(new Color(255, 255, 255));
+                }
+            }
+        });
+    }
+
     private void addGroup(String groupName) {
         if (groupName == null || groupName.isBlank() || "All".equalsIgnoreCase(groupName)) {
             showError("Invalid group name.");
@@ -578,7 +649,11 @@ public class App extends JFrame {
     private String getGroupFromCombo(JComboBox<String> groupCombo) {
         Object editorItem = groupCombo.getEditor().getItem();
         String val = editorItem == null ? "" : editorItem.toString().trim();
-        return "All".equalsIgnoreCase(val) ? "" : val;
+        // Filter out placeholder text and "All"
+        if (val.equals("Select Group") || "All".equalsIgnoreCase(val)) {
+            return "";
+        }
+        return val;
     }
 
     private void addTicker(String symbol, String group) {
@@ -658,7 +733,9 @@ public class App extends JFrame {
 
     private String getTickerInput(JComboBox<String> comboBox) {
         Object item = comboBox.getEditor().getItem();
-        return item == null ? "" : item.toString();
+        String text = item == null ? "" : item.toString();
+        // Filter out placeholder text
+        return text.equals("Search Ticker..") ? "" : text;
     }
 
     private void fetchTickerSuggestions(String query, DefaultComboBoxModel<String> model, JComboBox<String> combo) {
