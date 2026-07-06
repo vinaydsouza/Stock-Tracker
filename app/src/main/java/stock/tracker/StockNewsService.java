@@ -15,7 +15,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class StockNewsService {
-    private static final String NEWS_URL = "https://query1.finance.yahoo.com/v10/finance/quoteSummary/";
+    private static final String NEWS_URL = "https://query1.finance.yahoo.com/v1/finance/search?q=";
+    private static final String NEWS_PARAMS = "&newsCount=5";
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     private final HttpClient client = HttpClient.newHttpClient();
 
@@ -25,7 +26,7 @@ public class StockNewsService {
         }
 
         String encodedSymbol = URLEncoder.encode(symbol.trim().toUpperCase(Locale.US), StandardCharsets.UTF_8);
-        String url = NEWS_URL + encodedSymbol + "?modules=news";
+        String url = NEWS_URL + encodedSymbol + NEWS_PARAMS;
         
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -49,24 +50,8 @@ public class StockNewsService {
         List<NewsItem> newsList = new ArrayList<>();
         try {
             JSONObject root = new JSONObject(body);
-            JSONObject quoteSummary = root.optJSONObject("quoteSummary");
-            if (quoteSummary == null) {
-                return newsList;
-            }
-
-            JSONArray result = quoteSummary.optJSONArray("result");
-            if (result == null || result.length() == 0) {
-                return newsList;
-            }
-
-            JSONObject resultItem = result.getJSONObject(0);
-            JSONObject news = resultItem.optJSONObject("news");
-            if (news == null) {
-                return newsList;
-            }
-
-            JSONArray newsArray = news.optJSONArray("result");
-            if (newsArray == null) {
+            JSONArray newsArray = root.optJSONArray("news");
+            if (newsArray == null || newsArray.length() == 0) {
                 return newsList;
             }
 
@@ -74,8 +59,8 @@ public class StockNewsService {
                 JSONObject newsItem = newsArray.getJSONObject(i);
                 String title = newsItem.optString("title", "");
                 String link = newsItem.optString("link", "");
-                long publishedAt = newsItem.optLong("pubDate", 0);
-                String source = newsItem.optString("source", "");
+                long publishedAt = newsItem.optLong("providerPublishTime", 0);
+                String source = newsItem.optString("publisher", "");
 
                 if (!title.isBlank()) {
                     newsList.add(new NewsItem(title, source, publishedAt, link));
