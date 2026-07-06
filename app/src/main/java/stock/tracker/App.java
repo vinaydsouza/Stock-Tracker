@@ -466,35 +466,13 @@ public class App extends JFrame {
     }
 
     private void setupPlaceholder(JTextComponent textComponent, String placeholder) {
-        textComponent.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (textComponent.getText().isEmpty()) {
-                    textComponent.setText(placeholder);
-                    textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
-                    textComponent.setForeground(new Color(100, 110, 130));
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (textComponent.getText().equals(placeholder)) {
-                    textComponent.setText("");
-                    textComponent.setForeground(new Color(255, 255, 255));
-                    textComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
-                }
-            }
-        });
-
-        // Show placeholder initially
-        if (textComponent.getText().isEmpty()) {
-            textComponent.setText(placeholder);
-            textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
-            textComponent.setForeground(new Color(100, 110, 130));
-        }
-
-        // Add document listener to handle placeholder text
-        textComponent.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+        // Flag to track if we're currently showing placeholder text
+        final boolean[] isShowingPlaceholder = {false};
+        
+        // Create document listener first so it can be referenced in focus adapter
+        final javax.swing.event.DocumentListener[] docListener = new javax.swing.event.DocumentListener[1];
+        
+        docListener[0] = new javax.swing.event.DocumentListener() {
             @Override
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
                 updatePlaceholder();
@@ -513,19 +491,54 @@ public class App extends JFrame {
             private void updatePlaceholder() {
                 SwingUtilities.invokeLater(() -> {
                     String text = textComponent.getText();
-                    if (text.isEmpty()) {
-                        textComponent.getDocument().removeDocumentListener(this);
-                        textComponent.setText(placeholder);
-                        textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
-                        textComponent.setForeground(new Color(100, 110, 130));
-                        textComponent.getDocument().addDocumentListener(this);
-                    } else if (!text.equals(placeholder)) {
+                    // If user types something while placeholder is showing, clear it
+                    if (isShowingPlaceholder[0] && !text.isEmpty() && !text.equals(placeholder)) {
+                        isShowingPlaceholder[0] = false;
                         textComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
                         textComponent.setForeground(new Color(255, 255, 255));
                     }
                 });
             }
+        };
+        
+        textComponent.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                // When user focuses, remove placeholder if present
+                if (isShowingPlaceholder[0] && textComponent.getText().equals(placeholder)) {
+                    textComponent.getDocument().removeDocumentListener(docListener[0]);
+                    textComponent.setText("");
+                    isShowingPlaceholder[0] = false;
+                    textComponent.setForeground(new Color(255, 255, 255));
+                    textComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
+                    textComponent.getDocument().addDocumentListener(docListener[0]);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                // When user leaves field, restore placeholder if empty
+                if (textComponent.getText().isEmpty()) {
+                    textComponent.getDocument().removeDocumentListener(docListener[0]);
+                    textComponent.setText(placeholder);
+                    isShowingPlaceholder[0] = true;
+                    textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
+                    textComponent.setForeground(new Color(100, 110, 130));
+                    textComponent.getDocument().addDocumentListener(docListener[0]);
+                }
+            }
         });
+
+        // Show placeholder initially
+        if (textComponent.getText().isEmpty()) {
+            textComponent.setText(placeholder);
+            textComponent.setFont(new Font("SansSerif", Font.ITALIC, 14));
+            textComponent.setForeground(new Color(100, 110, 130));
+            isShowingPlaceholder[0] = true;
+        }
+
+        // Add the document listener
+        textComponent.getDocument().addDocumentListener(docListener[0]);
     }
 
     private void addGroup(String groupName) {
