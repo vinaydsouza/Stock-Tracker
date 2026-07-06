@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -1107,17 +1108,28 @@ public class App extends JFrame {
             
             if (value != null) {
                 String symbol = value.toString().toUpperCase();
-                String icon = getIconForTicker(symbol);
-                setText(icon + " " + symbol);
+                ImageIcon logo = CompanyLogoCache.getLogoForTicker(symbol);
+                
+                if (logo != null) {
+                    // Display with company logo
+                    setIcon(logo);
+                    setText("  " + symbol);
+                } else {
+                    // Fallback to emoji if logo not available
+                    setIcon(null);
+                    String icon = getIconForTicker(symbol);
+                    setText(icon + " " + symbol);
+                }
             }
             setHorizontalAlignment(JLabel.LEFT);
             setFont(new Font("SansSerif", Font.PLAIN, 14));
+            setVerticalAlignment(JLabel.CENTER);
             return this;
         }
         
         private String getIconForTicker(String symbol) {
             return switch (symbol) {
-                case "AAPL", "MSFT", "GOOGL", "META" -> "💻";
+                case "AAPL", "MSFT", "GOOGL", "GOOG", "META" -> "💻";
                 case "TSLA", "RIVN", "LCID", "NIO" -> "🚗";
                 case "NVDA", "AMD", "AVGO" -> "🔧";
                 case "JPM", "BAC", "GS" -> "🏦";
