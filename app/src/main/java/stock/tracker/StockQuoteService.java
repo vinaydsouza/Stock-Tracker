@@ -222,19 +222,39 @@ public class StockQuoteService {
             if (meta == null) {
                 return null;
             }
-            double price = meta.optDouble("regularMarketPrice", Double.NaN);
+
+            double regularPrice = meta.optDouble("regularMarketPrice", Double.NaN);
+            double preMarketPrice = meta.optDouble("preMarketPrice", Double.NaN);
+            double postMarketPrice = meta.optDouble("postMarketPrice", Double.NaN);
+            String marketState = meta.optString("marketState", "");
+
+            double price = chooseBestPrice(regularPrice, preMarketPrice, postMarketPrice, marketState);
             if (!Double.isFinite(price)) {
                 return null;
             }
+
             double previousClose = meta.optDouble("previousClose", Double.NaN);
             if (!Double.isFinite(previousClose)) {
                 previousClose = meta.optDouble("chartPreviousClose", Double.NaN);
             }
             double change = Double.NaN;
             double changePercent = Double.NaN;
+
+            if (isPreMarketState(marketState)) {
+                change = meta.optDouble("preMarketChange", Double.NaN);
+                changePercent = meta.optDouble("preMarketChangePercent", Double.NaN);
+            } else if (isPostMarketState(marketState)) {
+                change = meta.optDouble("postMarketChange", Double.NaN);
+                changePercent = meta.optDouble("postMarketChangePercent", Double.NaN);
+            }
+
             if (Double.isFinite(previousClose) && previousClose != 0) {
-                change = price - previousClose;
-                changePercent = (change / previousClose) * 100;
+                if (!Double.isFinite(change)) {
+                    change = price - previousClose;
+                }
+                if (!Double.isFinite(changePercent)) {
+                    changePercent = (change / previousClose) * 100;
+                }
             }
             String shortName = meta.optString("shortName", symbol);
             String group = symbolGroup.getOrDefault(symbol, "Ungrouped");
@@ -243,6 +263,33 @@ public class StockQuoteService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private static double chooseBestPrice(double regularPrice, double preMarketPrice, double postMarketPrice, String marketState) {
+        if (isPreMarketState(marketState) && Double.isFinite(preMarketPrice)) {
+            return preMarketPrice;
+        }
+        if (isPostMarketState(marketState) && Double.isFinite(postMarketPrice)) {
+            return postMarketPrice;
+        }
+        if (Double.isFinite(regularPrice)) {
+            return regularPrice;
+        }
+        if (Double.isFinite(postMarketPrice)) {
+            return postMarketPrice;
+        }
+        if (Double.isFinite(preMarketPrice)) {
+            return preMarketPrice;
+        }
+        return Double.NaN;
+    }
+
+    private static boolean isPreMarketState(String marketState) {
+        return "PRE".equalsIgnoreCase(marketState) || "PREPRE".equalsIgnoreCase(marketState);
+    }
+
+    private static boolean isPostMarketState(String marketState) {
+        return "POST".equalsIgnoreCase(marketState) || "POSTPOST".equalsIgnoreCase(marketState);
     }
 
     private Map<String, StockItem> fetchQuotesFromStooq(Collection<String> symbols, Map<String, String> symbolGroup) throws IOException, InterruptedException {

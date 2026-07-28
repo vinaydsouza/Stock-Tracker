@@ -696,10 +696,6 @@ public class App extends JFrame {
     }
 
     private void refreshQuotesAsync() {
-        if (isWallStreetClosed()) {
-            SwingUtilities.invokeLater(this::updateMarketClosedStatus);
-            return;
-        }
         SwingUtilities.invokeLater(() -> marketStatusLabel.setText("Refreshing quotes..."));
         scheduler.execute(this::refreshQuotes);
     }
@@ -818,11 +814,6 @@ public class App extends JFrame {
     }
 
     private void refreshQuotes() {
-        if (isWallStreetClosed()) {
-            SwingUtilities.invokeLater(this::updateMarketClosedStatus);
-            return;
-        }
-
         Map<String, String> symbolGroupSnapshot;
         synchronized (symbolGroupMap) {
             symbolGroupSnapshot = new LinkedHashMap<>(symbolGroupMap);
@@ -881,15 +872,19 @@ public class App extends JFrame {
             tableModel.addRow(new Object[]{"No quotes available yet. Add tickers to see live data.", "", "", "", "", ""});
         }
 
-        boolean marketClosed = isWallStreetClosed();
-        String direction = marketClosed ? "Market Closed" : (positive >= negative ? "Market Up" : "Market Down");
-        String refreshTime = marketClosed && !lastRefreshTime.isBlank() ? lastRefreshTime : now();
-        if (!marketClosed) {
-            lastRefreshTime = refreshTime;
-            lastRefreshedRows = rowsAdded;
-        }
+        MarketSession session = getMarketSession();
+        String direction = positive >= negative ? "Market Up" : "Market Down";
+        String statusPrefix = switch (session) {
+            case PRE_MARKET -> "Pre-Market";
+            case REGULAR -> direction;
+            case AFTER_HOURS -> "After-Hours";
+            case WEEKEND -> "Weekend (Closed)";
+        };
+        String refreshTime = now();
+        lastRefreshTime = refreshTime;
+        lastRefreshedRows = rowsAdded;
 
-        marketStatusLabel.setText(direction + " — " + rowsAdded + " tickers refreshed at " + refreshTime + ".");
+        marketStatusLabel.setText(statusPrefix + " — " + rowsAdded + " tickers refreshed at " + refreshTime + ".");
         if (!direction.equals(currentDirection)) {
             String message = "Market direction changed to " + direction + " at " + refreshTime;
             log(message);
@@ -898,30 +893,29 @@ public class App extends JFrame {
         }
     }
 
-    private void updateMarketClosedStatus() {
-        if (lastRefreshTime.isBlank()) {
-            marketStatusLabel.setText("Market Closed — no recent quote refresh available.");
-        } else {
-            marketStatusLabel.setText("Market Closed — " + lastRefreshedRows + " tickers refreshed at " + lastRefreshTime + ".");
-        }
-        if (!"Market Closed".equals(currentDirection)) {
-            String message = "Market direction changed to Market Closed at " + (lastRefreshTime.isBlank() ? now() : lastRefreshTime);
-            log(message);
-            displayNotification("Stock Tracker", message, TrayIcon.MessageType.INFO);
-            currentDirection = "Market Closed";
-        }
-    }
-
-    private boolean isWallStreetClosed() {
+    private MarketSession getMarketSession() {
         LocalDateTime nowEastern = LocalDateTime.now(ZoneId.of("America/New_York"));
         DayOfWeek day = nowEastern.getDayOfWeek();
         if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) {
-            return true;
+            return MarketSession.WEEKEND;
         }
         LocalTime time = nowEastern.toLocalTime();
         LocalTime marketOpen = LocalTime.of(9, 30);
         LocalTime marketClose = LocalTime.of(16, 0);
-        return time.isBefore(marketOpen) || !time.isBefore(marketClose);
+        if (time.isBefore(marketOpen)) {
+            return MarketSession.PRE_MARKET;
+        }
+        if (!time.isBefore(marketClose)) {
+            return MarketSession.AFTER_HOURS;
+        }
+        return MarketSession.REGULAR;
+    }
+
+    private enum MarketSession {
+        PRE_MARKET,
+        REGULAR,
+        AFTER_HOURS,
+        WEEKEND
     }
 
     private void log(String message) {
