@@ -4,10 +4,18 @@
 package stock.tracker;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+import java.awt.GraphicsEnvironment;
+
 import org.junit.jupiter.api.Test;
 
 class AppTest {
-    @Test void appConstructsSuccessfully() {
-        assertDoesNotThrow(App::new, "Stock Tracker desktop app should construct without error");
+    @Test
+    void appConstructsSuccessfully() {
+        assertDoesNotThrow(() -> {
+            if (!GraphicsEnvironment.isHeadless()) {
+                new App();
+            }
+        }, "Stock Tracker desktop app should construct without error when a display is available");
     }
 }

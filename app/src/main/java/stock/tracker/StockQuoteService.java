@@ -39,25 +39,30 @@ public class StockQuoteService {
         Map<String, StockItem> quotes = new LinkedHashMap<>();
         Set<String> missing = new LinkedHashSet<>();
 
-        for (String rawSymbol : symbols) {
-            if (rawSymbol == null) {
-                continue;
+        try {
+            for (String rawSymbol : symbols) {
+                if (rawSymbol == null) {
+                    continue;
+                }
+                String symbol = rawSymbol.trim().toUpperCase(Locale.US);
+                if (symbol.isEmpty()) {
+                    continue;
+                }
+                StockItem quote = fetchQuoteForSymbol(symbol, symbolGroup);
+                if (quote != null) {
+                    quotes.put(symbol, quote);
+                } else {
+                    missing.add(symbol);
+                }
             }
-            String symbol = rawSymbol.trim().toUpperCase(Locale.US);
-            if (symbol.isEmpty()) {
-                continue;
-            }
-            StockItem quote = fetchQuoteForSymbol(symbol, symbolGroup);
-            if (quote != null) {
-                quotes.put(symbol, quote);
-            } else {
-                missing.add(symbol);
-            }
-        }
 
-        if (!missing.isEmpty()) {
-            Map<String, StockItem> fallbackQuotes = fetchQuotesFromStooq(missing, symbolGroup);
-            fallbackQuotes.forEach(quotes::putIfAbsent);
+            if (!missing.isEmpty()) {
+                Map<String, StockItem> fallbackQuotes = fetchQuotesFromStooq(missing, symbolGroup);
+                fallbackQuotes.forEach(quotes::putIfAbsent);
+            }
+        } catch (IOException | InterruptedException e) {
+            // Fall back to unavailable quotes when the upstream service is unreachable.
+            missing.clear();
         }
 
         for (String rawSymbol : symbols) {
@@ -169,41 +174,45 @@ public class StockQuoteService {
             return List.of();
         }
 
-        String url = YAHOO_SEARCH_URL + URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("User-Agent", USER_AGENT)
-                .header("Accept", "*/*")
-                .GET()
-                .build();
+        try {
+            String url = YAHOO_SEARCH_URL + URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("User-Agent", USER_AGENT)
+                    .header("Accept", "*/*")
+                    .GET()
+                    .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                return List.of();
+            }
+
+            JSONObject json = new JSONObject(response.body());
+            JSONArray quotes = json.optJSONArray("quotes");
+            if (quotes == null || quotes.isEmpty()) {
+                return List.of();
+            }
+
+            List<String> suggestions = new ArrayList<>();
+            for (int i = 0; i < quotes.length() && suggestions.size() < 8; i++) {
+                JSONObject item = quotes.getJSONObject(i);
+                String quoteType = item.optString("quoteType", "");
+                if (!"EQUITY".equalsIgnoreCase(quoteType)) {
+                    continue;
+                }
+                String candidate = item.optString("symbol", "");
+                if (candidate.isBlank()) {
+                    continue;
+                }
+                if (!suggestions.contains(candidate)) {
+                    suggestions.add(candidate);
+                }
+            }
+            return suggestions;
+        } catch (IOException | InterruptedException e) {
             return List.of();
         }
-
-        JSONObject json = new JSONObject(response.body());
-        JSONArray quotes = json.optJSONArray("quotes");
-        if (quotes == null || quotes.isEmpty()) {
-            return List.of();
-        }
-
-        List<String> suggestions = new ArrayList<>();
-        for (int i = 0; i < quotes.length() && suggestions.size() < 8; i++) {
-            JSONObject item = quotes.getJSONObject(i);
-            String quoteType = item.optString("quoteType", "");
-            if (!"EQUITY".equalsIgnoreCase(quoteType)) {
-                continue;
-            }
-            String candidate = item.optString("symbol", "");
-            if (candidate.isBlank()) {
-                continue;
-            }
-            if (!suggestions.contains(candidate)) {
-                suggestions.add(candidate);
-            }
-        }
-        return suggestions;
     }
 
     private StockItem parseYahooChartResponse(String responseBody, String symbol, Map<String, String> symbolGroup) {
