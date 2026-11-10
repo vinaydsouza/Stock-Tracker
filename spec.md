@@ -15,6 +15,7 @@ Deliver a desktop stock tracking experience that provides live stock quotes, mar
 5. As a user, I want context actions for groups (rename, refresh, delete) so I can manage watchlists without leaving the main view.
 6. As a user, I want to delete tickers from my watchlist so I can remove symbols I no longer want to track.
 7. As a user, I want to see the latest news for a selected ticker so I can stay informed about market developments.
+8. As a user, I want to search and sort the visible watchlist and export it to CSV so I can quickly find and reuse quote data.
 
 ## Priorities
 - P1: Core quote tracking and live updates.
@@ -24,6 +25,7 @@ Deliver a desktop stock tracking experience that provides live stock quotes, mar
 - P5: UI accessibility, performance, and reliability.
 - P6: Delete ticker functionality (right-click context menu).
 - P7: Latest news display for selected tickers.
+- P8: Search, sorting, and CSV export for the visible watchlist.
 
 ## TDD Proof
 ### Proof Statement
@@ -68,6 +70,14 @@ Stock Tracker will be developed by writing failing tests first, then implementin
   - And each article displays title and source
   - When the user chooses `Rename`
   - Then the group name updates consistently across the UI
+- Story 8: Find and export visible tickers
+  - Given ticker quotes are displayed
+  - When the user searches by symbol or company name
+  - Then only matching visible rows remain in the table
+  - When the user clicks a quote column header
+  - Then the rows are sorted by that column, with numeric quote columns sorted numerically
+  - When the user exports the visible quotes
+  - Then the selected group and search filter are reflected in the UTF-8 CSV file
 
 ## Applicable Standards
 - TDD: Red/Green/Refactor cycle for each requirement.

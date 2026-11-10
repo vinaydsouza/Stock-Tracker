@@ -14,6 +14,9 @@ This project is built as a Java Swing application in the `app` module. It fetche
 - Group-based ticker filtering
 - Add and track tickers by symbol with a compact suggestion dropdown
 - Right-click group menu for rename, refresh, and delete actions
+- Search the visible watchlist by ticker, quote, or company name
+- Sort quote columns by clicking their headers
+- Export the currently visible (group-filtered and searched) tickers to UTF-8 CSV
 
 ## How to run
 

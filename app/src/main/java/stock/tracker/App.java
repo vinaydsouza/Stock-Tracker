@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -24,12 +25,15 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,6 +43,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -46,6 +51,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -57,7 +63,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
@@ -66,6 +74,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableRowSorter;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -309,6 +318,13 @@ public class App extends JFrame {
         quoteTable.setSelectionBackground(new Color(41, 121, 255));
         quoteTable.setSelectionForeground(Color.WHITE);
 
+        TableRowSorter<DefaultTableModel> quoteSorter = new TableRowSorter<>(tableModel);
+        Comparator<String> numericComparator = Comparator.comparingDouble(App::parseNumericCell);
+        quoteSorter.setComparator(1, numericComparator);
+        quoteSorter.setComparator(2, numericComparator);
+        quoteSorter.setComparator(3, numericComparator);
+        quoteTable.setRowSorter(quoteSorter);
+
         JTableHeader header = quoteTable.getTableHeader();
         header.setBackground(new Color(35, 45, 65));
         header.setForeground(new Color(150, 160, 175));
@@ -367,8 +383,47 @@ public class App extends JFrame {
         JLabel feedTitle = new JLabel("Ticker Feed");
         feedTitle.setForeground(new Color(220, 225, 235));
         feedTitle.setFont(new Font("SansSerif", Font.BOLD, 14));
-        quotePanel.add(feedTitle, BorderLayout.NORTH);
+        JTextField quoteSearchField = new JTextField(14);
+        quoteSearchField.setToolTipText("Filter visible tickers by symbol, price, or company name");
+        quoteSearchField.setBackground(new Color(16, 22, 35));
+        quoteSearchField.setForeground(new Color(220, 225, 235));
+        quoteSearchField.setCaretColor(Color.WHITE);
+        JButton exportButton = createSecondaryButton("Export CSV");
+        JPanel quoteToolbar = new JPanel(new BorderLayout(10, 0));
+        quoteToolbar.setOpaque(false);
+        quoteToolbar.add(feedTitle, BorderLayout.WEST);
+        JPanel quoteActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        quoteActions.setOpaque(false);
+        quoteActions.add(quoteSearchField);
+        quoteActions.add(exportButton);
+        quoteToolbar.add(quoteActions, BorderLayout.EAST);
+        quotePanel.add(quoteToolbar, BorderLayout.NORTH);
         quotePanel.add(quoteScroll, BorderLayout.CENTER);
+
+        quoteSearchField.getDocument().addDocumentListener(new DocumentListener() {
+            private void updateFilter() {
+                String query = quoteSearchField.getText().trim();
+                quoteSorter.setRowFilter(query.isEmpty()
+                        ? null
+                        : RowFilter.regexFilter("(?i)" + Pattern.quote(query)));
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                updateFilter();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                updateFilter();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                updateFilter();
+            }
+        });
+        exportButton.addActionListener(e -> exportVisibleQuotes(quoteTable));
 
         JPanel sidePanel = new RoundedPanel(26, new Color(25, 32, 50));
         sidePanel.setLayout(new BorderLayout(10, 10));
@@ -698,6 +753,59 @@ public class App extends JFrame {
     private void refreshQuotesAsync() {
         SwingUtilities.invokeLater(() -> marketStatusLabel.setText("Refreshing quotes..."));
         scheduler.execute(this::refreshQuotes);
+    }
+
+    private static double parseNumericCell(String value) {
+        try {
+            return Double.parseDouble(value.replace("%", "").trim());
+        } catch (NumberFormatException e) {
+            return Double.NaN;
+        }
+    }
+
+    private void exportVisibleQuotes(JTable quoteTable) {
+        if (quoteTable.getRowCount() == 0
+                || (quoteTable.getRowCount() == 1
+                && tableModel.getValueAt(quoteTable.convertRowIndexToModel(0), 0).toString().startsWith("No quotes available"))) {
+            showInfo("There are no visible quotes to export.");
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Export visible quotes");
+        chooser.setSelectedFile(Path.of("stock-watchlist.csv").toFile());
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        Path destination = chooser.getSelectedFile().toPath();
+        if (Files.exists(destination)
+                && JOptionPane.showConfirmDialog(this, "Replace the existing file?", "Confirm export",
+                        JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        List<String> headers = new ArrayList<>();
+        for (int column = 0; column < tableModel.getColumnCount(); column++) {
+            headers.add(tableModel.getColumnName(column));
+        }
+        List<List<String>> rows = new ArrayList<>();
+        for (int viewRow = 0; viewRow < quoteTable.getRowCount(); viewRow++) {
+            int modelRow = quoteTable.convertRowIndexToModel(viewRow);
+            List<String> row = new ArrayList<>();
+            for (int column = 0; column < tableModel.getColumnCount(); column++) {
+                Object value = tableModel.getValueAt(modelRow, column);
+                row.add(value == null ? "" : value.toString());
+            }
+            rows.add(row);
+        }
+
+        try {
+            StockCsvExporter.export(destination, headers, rows);
+            showInfo("Exported " + rows.size() + " visible ticker(s) to " + destination + ".");
+        } catch (IOException e) {
+            showError("Unable to export quotes: " + e.getMessage());
+        }
     }
 
     private String getTickerInput(JComboBox<String> comboBox) {
