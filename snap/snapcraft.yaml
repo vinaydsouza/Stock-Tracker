@@ -1,0 +1,41 @@
+name: stock-tracker
+base: core24
+version: '1.0.0'
+title: Stock Tracker
+summary: Track stock quotes and grouped watchlists
+source-code: https://github.com/vinaydsouza/Stock-Tracker
+issues: https://github.com/vinaydsouza/Stock-Tracker/issues
+website: https://github.com/vinaydsouza/Stock-Tracker
+description: |
+  Stock Tracker is a desktop application for tracking stock quotes,
+  organizing watchlists, viewing market status and news, and exporting
+  visible tickers to CSV.
+grade: stable
+confinement: strict
+
+platforms:
+  amd64:
+
+apps:
+  stock-tracker:
+    command: bin/stock-tracker
+    extensions: [gnome]
+    plugs: [home, network]
+    environment:
+      JAVA_HOME: $SNAP/runtime
+      JAVA_TOOL_OPTIONS: -Duser.home=$SNAP_USER_COMMON
+
+parts:
+  stock-tracker:
+    plugin: nil
+    source: .
+    build-packages:
+      - openjdk-21-jdk
+    override-build: |
+      ./gradlew --no-daemon :app:installDist
+      cp -a app/build/install/stock-tracker/. "$CRAFT_PART_INSTALL/"
+      jlink --add-modules ALL-MODULE-PATH --bind-services \
+        --strip-debug --no-header-files --no-man-pages \
+        --output "$CRAFT_PART_INSTALL/runtime"
+      cp --remove-destination /etc/ssl/certs/java/cacerts \
+        "$CRAFT_PART_INSTALL/runtime/lib/security/cacerts"

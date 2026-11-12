@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Stock Tracker
+Comment=Track stock quotes and watchlists
+Exec=stock-tracker
+Icon=${SNAP}/meta/gui/stock-tracker.svg
+Terminal=false
+Categories=Office;Finance;

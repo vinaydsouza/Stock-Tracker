@@ -74,6 +74,14 @@ jpackage \
 
 The `.deb` package requires `fakeroot` and `dpkg-deb`.
 
+### Snap package
+
+The Snap bundles a Java runtime. Its watchlist and logo cache are kept in Snap-specific user data, separate from the `.deb` and ZIP installations. The `home` interface allows CSV export to non-hidden files in the home directory.
+
+To build the strictly confined Snap package locally, install Snapcraft and a supported build provider, then run `snapcraft pack`.
+
+Company logo downloads currently do not work because the Clearbit Logo API has shut down. Stock tracking and CSV export do not depend on that service.
+
 ## Notes
 
 - The repository has been initialized with `git` and pushed to `https://github.com/vinaydsouza/Stock-Tracker.git`
