@@ -34,15 +34,45 @@ Or build the app with:
 
 ## Download
 
-Download `stock-tracker.zip` from the Assets section of the latest [GitHub Release](https://github.com/vinaydsouza/Stock-Tracker/releases). Extract it and run the launcher script in the `bin` directory (`stock-tracker` on Linux/macOS or `stock-tracker.bat` on Windows). Java 21 is required.
+For Ubuntu 24.04 or newer on 64-bit Intel/AMD, download the `stock-tracker_*_amd64.deb` file from the Assets section of the latest [GitHub Release](https://github.com/vinaydsouza/Stock-Tracker/releases) and install it with:
 
-Release packages are built automatically when a GitHub Release is published. To build a package locally, run:
+```bash
+sudo apt install ./stock-tracker_*_amd64.deb
+```
+
+The Debian package includes its Java runtime and adds Stock Tracker to the applications menu.
+
+The release also includes `stock-tracker.zip` for other operating systems. Extract it and run the launcher script in the `bin` directory (`stock-tracker` on Linux/macOS or `stock-tracker.bat` on Windows); Java 21 is required for this ZIP.
+
+Release packages are built automatically when a GitHub Release is published. To build the ZIP locally, run:
 
 ```bash
 ./gradlew :app:distZip
 ```
 
 The ZIP is created in `app/build/distributions`.
+
+To build the Ubuntu package locally on Ubuntu, run `./gradlew :app:installDist`, then:
+
+```bash
+jpackage \
+  --type deb \
+  --name "Stock Tracker" \
+  --app-version 1.0.0 \
+  --vendor "Stock Tracker" \
+  --description "A lightweight desktop stock watchlist and quote tracker." \
+  --linux-deb-maintainer "vinay-dsouza@users.noreply.github.com" \
+  --input app/build/install/stock-tracker/lib \
+  --main-jar app.jar \
+  --main-class stock.tracker.App \
+  --dest app/build/distributions \
+  --linux-package-name stock-tracker \
+  --linux-app-category Finance \
+  --linux-menu-group Finance \
+  --linux-shortcut
+```
+
+The `.deb` package requires `fakeroot` and `dpkg-deb`.
 
 ## Notes
 
