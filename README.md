@@ -32,6 +32,18 @@ Or build the app with:
 ./gradlew build
 ```
 
+## Download
+
+Download `stock-tracker.zip` from the Assets section of the latest [GitHub Release](https://github.com/vinaydsouza/Stock-Tracker/releases). Extract it and run the launcher script in the `bin` directory (`stock-tracker` on Linux/macOS or `stock-tracker.bat` on Windows). Java 21 is required.
+
+Release packages are built automatically when a GitHub Release is published. To build a package locally, run:
+
+```bash
+./gradlew :app:distZip
+```
+
+The ZIP is created in `app/build/distributions`.
+
 ## Notes
 
 - The repository has been initialized with `git` and pushed to `https://github.com/vinaydsouza/Stock-Tracker.git`

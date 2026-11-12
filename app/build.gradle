@@ -34,8 +34,12 @@ java {
 }
 
 application {
-    // Define the main class for the application.
+    applicationName = 'stock-tracker'
     mainClass = 'stock.tracker.App'
+}
+
+tasks.named('distZip') {
+    archiveFileName = 'stock-tracker.zip'
 }
 
 tasks.named('test') {
